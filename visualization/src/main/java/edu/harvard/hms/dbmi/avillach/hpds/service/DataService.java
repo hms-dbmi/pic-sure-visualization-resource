@@ -119,11 +119,12 @@ public class DataService implements IDataService {
 
             continuousDataList.add(new ContinuousData(
                     title,
-                    new TreeMap<>(countMap),
+                    new TreeMap<>(bucketData(countMap, 10)),
                     createXAxisLabel(title),
                     "Frequency"));
             countMap.clear();
         }
+
         logger.debug("Finished Categorical Data with " + continuousDataList.size() + " results");
         return continuousDataList;
     }
@@ -221,6 +222,35 @@ public class DataService implements IDataService {
             title = "Variable distribution of " + titleParts[2] + ": " + titleParts[3];
         }
         return title;
+    }
+
+    private Map<String, Integer> bucketData(Map<Double, Integer> data, int numberOfBuckets) {
+        int maxSize = (int) Math.ceil((double)data.keySet().size() / (double)numberOfBuckets);
+        Map<String, Integer> results = new LinkedHashMap<>();
+        List<String> currentBucketLabels = new ArrayList<>();
+        int currentSize = 0;
+        int currentBucketCount = 0;
+        for (Map.Entry<Double, Integer> entry : data.entrySet()) {
+            if (currentSize < maxSize) {
+                currentBucketCount += entry.getValue();
+                currentBucketLabels.add(entry.getKey().toString());
+                currentSize++;
+            } else {
+                String key = currentBucketLabels.get(0) + " - " + currentBucketLabels.get(currentBucketLabels.size() - 1);
+                results.put(key, currentBucketCount);
+                currentBucketCount = 0;
+                currentSize = 0;
+                currentBucketLabels.clear();
+                currentBucketCount += entry.getValue();
+                currentBucketLabels.add(entry.getKey().toString());
+                currentSize++;
+            }
+        }
+        if (currentSize > 0) {
+            String key = currentBucketLabels.get(0) + "+";
+            results.put(key, currentBucketCount);
+        }
+        return results;
     }
 
     private String createXAxisLabel(String title) {
