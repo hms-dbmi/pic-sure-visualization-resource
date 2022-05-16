@@ -120,7 +120,7 @@ public class DataService implements IDataService {
 
             continuousDataList.add(new ContinuousData(
                     title,
-                    new TreeMap<>(
+                    new LinkedHashMap<>(
                             bucketData(countMap)
                     ),
                     createXAxisLabel(title),
