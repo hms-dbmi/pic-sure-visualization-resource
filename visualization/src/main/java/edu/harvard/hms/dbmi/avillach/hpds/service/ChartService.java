@@ -29,7 +29,7 @@ public class ChartService implements IChartService {
         PieChart chart = new PieChartBuilder()
                 .title(title)
                 .width(chartData.getChartWidth())
-                .height(chartData.getChartWidth())
+                .height(chartData.getChartHeight())
                 .build();
         this.setUpPicSureStyler(chart);
         chart.getStyler().setSeriesColors(theme.getSeriesColors());
@@ -45,7 +45,7 @@ public class ChartService implements IChartService {
                 chartData.getTitle();
         CategoryChart chart = new CategoryChartBuilder()
                 .width(chartData.getChartWidth())
-                .height(chartData.getChartWidth())
+                .height(chartData.getChartHeight())
                 .title(chartData.getTitle())
                 .build();
         this.setUpPicSureStyler(chart);
@@ -69,7 +69,7 @@ public class ChartService implements IChartService {
                 chartData.getTitle();
         CategoryChart chart = new CategoryChartBuilder()
                 .width(chartData.getChartWidth())
-                .height(chartData.getChartWidth())
+                .height(chartData.getChartHeight())
                 .title(chartData.getTitle())
                 .build();
         this.setUpPicSureStyler(chart);

@@ -8,8 +8,8 @@ import java.awt.Color;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class VisualizationData {
-    private static final int CHART_WIDTH = 600;
-    private static final int CHART_HEIGHT = 1000;
+    private static final int CHART_WIDTH = 500;
+    private static final int CHART_HEIGHT = 600;
     private String title;
     private boolean continuous;
     private Color[] colors;

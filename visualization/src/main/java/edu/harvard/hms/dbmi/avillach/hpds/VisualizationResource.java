@@ -7,13 +7,13 @@ import edu.harvard.hms.dbmi.avillach.hpds.model.*;
 import edu.harvard.hms.dbmi.avillach.hpds.model.domain.*;
 import edu.harvard.hms.dbmi.avillach.hpds.service.ChartService;
 import edu.harvard.hms.dbmi.avillach.hpds.service.DataService;
+import edu.harvard.hms.dbmi.avillach.hpds.service.HpdsService;
 import edu.harvard.hms.dbmi.avillach.hpds.service.VisualizationService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -36,6 +36,8 @@ public class VisualizationResource implements IResourceRS {
     private final @NonNull ChartService chartService;
     @Inject
     private final @NonNull DataService dataService;
+    @Inject
+    private final @NonNull HpdsService hpdsService;
     @Inject
     private final @NonNull VisualizationService visualizationService;
 
@@ -64,23 +66,13 @@ public class VisualizationResource implements IResourceRS {
 
     @POST
     @Path("/query/sync")
-    public Response getVisualizations(QueryRequest queryJson) {
+    public Response getProcessedCrossCounts(QueryRequest queryJson) {
         logger.debug("Received query:  \n" + queryJson);
-        List<CategoricalData> categoricalData = dataService.getCategoricalData(queryJson);
-        List<ContinuousData> continuousData = dataService.getContinuousData(queryJson);
-        VisualizationResponse response = new VisualizationResponse();
-        for(CategoricalData data: categoricalData) {
-            String image2 = visualizationService.createBase64PNG(
-                    chartService.createCategoryBar(data)
-            );
-            response.getImages().add(new VisualizationImage(image2, data.getTitle(), "Bar chart"));
-        }
-        for(ContinuousData data: continuousData) {
-            String image = visualizationService.createBase64PNG(
-                    chartService.createHistogram(data)
-            );
-            response.getImages().add(new VisualizationImage(image, data.getTitle(), "Histogram"));
-        }
+        Map<String, Map<String, Integer>> crossCountsMap = hpdsService.getCrossCountsMap(queryJson);
+        if (crossCountsMap == null || crossCountsMap.isEmpty()) return Response.ok().build();
+        ProcessedCrossCountsResponse response = new ProcessedCrossCountsResponse();
+        response.getCategoricalData().addAll(dataService.getCategoricalData(queryJson, crossCountsMap));
+        response.getContinuousData().addAll(dataService.getContinuousData(queryJson, crossCountsMap));
         return Response.ok(response).build();
     }
 
