@@ -75,7 +75,7 @@ public class DataProcessingProcessingService implements IDataProcessingService {
     }
 
     /**
-     * TODO: Document this
+     * For each continuous cross count we create a histogram of the values.
      *
      * @param queryRequest - id of target resource
      * @return List<CategoricalData> - result of query
@@ -102,6 +102,7 @@ public class DataProcessingProcessingService implements IDataProcessingService {
 
     /**
      * Calculates the number of bins for the continuous data using the keys of the count map.
+     *
      * @param countMap - Map of the counts for the continuous data
      * @return int - number of bins
      */
@@ -149,7 +150,8 @@ public class DataProcessingProcessingService implements IDataProcessingService {
     }
 
     /**
-     * Replaces long column names with shorter version
+     * Replaces long column names with shorter version.
+     *
      * @param axisMap
      * @return
      */
@@ -171,6 +173,7 @@ public class DataProcessingProcessingService implements IDataProcessingService {
 
     /**
      * Creates the x axis label for the continuous data.
+     *
      * @param filterKey - String - the title of the continuous data axis
      * @return String - the new x axis label for the continuous data
      */
@@ -218,21 +221,22 @@ public class DataProcessingProcessingService implements IDataProcessingService {
         // This while loop finds the range of each bin for createLabelsForBins as well as adds missing bins with 0 count
         double bucketMax = results.keySet().stream().max(Integer::compareTo).orElse(0);
         while (it.hasNext()) {
-            Map.Entry<Integer, Integer> entry = it.next();
-            ranges.put(entry.getKey(), new ArrayList<>());
-            if (entry.getKey() == 0) {
-                ranges.get(entry.getKey()).add(min);
+            // Where bucket.key is the bin index created in createBinsAndMergeCounts and value is the merged counts.
+            Map.Entry<Integer, Integer> bucket = it.next();
+            ranges.put(bucket.getKey(), new ArrayList<>());
+            if (bucket.getKey() == 0) {
+                ranges.get(bucket.getKey()).add(min);
             } else {
-                ranges.get(entry.getKey()).add(min + (entry.getKey() * binSize));
+                ranges.get(bucket.getKey()).add(min + (bucket.getKey() * binSize));
             }
-            ranges.get(entry.getKey()).add(min + ((entry.getKey() + 1) * binSize) - 1);
+            ranges.get(bucket.getKey()).add(min + ((bucket.getKey() + 1) * binSize) - 1);
 
             //If not the last item in the map and the results map does not contain the key + 1 add a new key + 1 to the keysToAdd list
-            if (entry.getKey() != bucketMax && !results.containsKey(entry.getKey() + 1)) {
-                keysToAdd.add(entry.getKey()+1);
-                ranges.put(entry.getKey() + 1, new ArrayList<>());
-                ranges.get(entry.getKey() + 1).add(min + ((entry.getKey() + 1) * binSize));
-                ranges.get(entry.getKey() + 1).add(min + ((entry.getKey() + 2) * binSize) - 1);
+            if (bucket.getKey() != bucketMax && !results.containsKey(bucket.getKey() + 1)) {
+                keysToAdd.add(bucket.getKey()+1);
+                ranges.put(bucket.getKey() + 1, new ArrayList<>());
+                ranges.get(bucket.getKey() + 1).add(min + ((bucket.getKey() + 1) * binSize));
+                ranges.get(bucket.getKey() + 1).add(min + ((bucket.getKey() + 2) * binSize) - 1);
             }
         }
         Map<Integer, Integer> finalResults = results;
@@ -255,6 +259,7 @@ public class DataProcessingProcessingService implements IDataProcessingService {
 
     /**
      * Finds the bin location for each value in the data map and merges the counts for each bin.
+     *
      * @param data - Map<Double, Integer> - the data to be binned
      * @param numBins - int - the number of bins to be created
      * @param min - double - the minimum value in the data
@@ -268,6 +273,7 @@ public class DataProcessingProcessingService implements IDataProcessingService {
             if (bin < numBins) {
                 results.merge(bin, entry.getValue(), Integer::sum);
             } else {
+                // When the key is exactly the max value
                 results.merge(bin - 1, entry.getValue(), Integer::sum);
             }
         }
@@ -287,15 +293,15 @@ public class DataProcessingProcessingService implements IDataProcessingService {
     private static Map<String, Integer> createLabelsForBins(Map<Integer, Integer> results, Map<Integer, List<Double>> ranges) {
         Map<String, Integer> finalMap = new LinkedHashMap<>();
         String label = "";
-        for (Map.Entry<Integer, Integer> entry : results.entrySet()) {
-            double minForLabel = ranges.get(entry.getKey()).stream().min(Double::compareTo).orElse(0.0);
-            double maxForLabel = ranges.get(entry.getKey()).stream().max(Double::compareTo).orElse(0.0);
+        for (Map.Entry<Integer, Integer> bucket : results.entrySet()) {
+            double minForLabel = ranges.get(bucket.getKey()).stream().min(Double::compareTo).orElse(0.0);
+            double maxForLabel = ranges.get(bucket.getKey()).stream().max(Double::compareTo).orElse(0.0);
             if (minForLabel == maxForLabel) {
                 label = String.format("%.1f", minForLabel);
             } else {
                 label = String.format("%.1f", minForLabel) + " - " + String.format("%.1f", maxForLabel);
             }
-            finalMap.put(label, entry.getValue());
+            finalMap.put(label, bucket.getValue());
         }
         Integer lastCount = finalMap.get(label);
         //Last label should be the min in the range with a '+' sign.
